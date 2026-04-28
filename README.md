@@ -39,7 +39,7 @@
 
 <br/>
 
-## 📋 Table of Contents
+## Table of Contents
 
 | # | Section | Description |
 |---|---------|-------------|
@@ -70,7 +70,7 @@
 
 <br/>
 
-## 🔥 The Problem
+## The Problem
 
 > *"Algorithmic bias is not a hypothetical risk — it is a documented, recurring harm."*
 
@@ -82,16 +82,16 @@ These are not hypothetical edge cases. They are real systems that affected real 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         REAL-WORLD BIAS INCIDENTS                           │
 ├──────────────────────┬──────────────────────────────────────────────────────┤
-│  ⚖️  COMPAS (2016)   │  Assigned 2× higher recidivism risk to Black         │
+│    COMPAS (2016)   │  Assigned 2× higher recidivism risk to Black         │
 │                      │  defendants vs. white defendants with equal history  │
 ├──────────────────────┼──────────────────────────────────────────────────────┤
-│  📋 Amazon (2018)    │  Hiring model penalised résumés containing the word  │
+│   Amazon (2018)    │  Hiring model penalised résumés containing the word  │
 │                      │  "women's" — trained on 10 years of male applicants  │
 ├──────────────────────┼──────────────────────────────────────────────────────┤
-│  🏦 Credit Scoring   │  Postcode-based models encode historical redlining,  │
+│   Credit Scoring   │  Postcode-based models encode historical redlining,  │
 │     (Ongoing)        │  punishing applicants for geography, not credit      │
 ├──────────────────────┼──────────────────────────────────────────────────────┤
-│  🏥 Healthcare AI    │  Commercial tool assigned lower risk scores to Black │
+│   Healthcare AI    │  Commercial tool assigned lower risk scores to Black │
 │     (2019)           │  patients with the same clinical needs as white ones │
 └──────────────────────┴──────────────────────────────────────────────────────┘
 ```
@@ -118,12 +118,12 @@ Most practitioners have **no practical, affordable way** to audit their models b
 ╔═══════════════════════════════════════════════════════════════╗
 ║                    THEMIS CORE PROMISES                       ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  🔒  100% LOCAL      │  Your data never leaves your machine  ║
-║  ⚡  FAST            │  9 models trained + ranked in minutes ║
-║  📊  COMPREHENSIVE   │  6 fairness metrics per attribute      ║
-║  📄  AUDITABLE       │  Row-level decision traces, PDF export ║
-║  🆓  FREE            │  MIT licensed, no SaaS subscriptions  ║
-║  🔌  OPTIONAL CLOUD  │  Firebase is opt-in, not required      ║
+║    100% LOCAL      │  Your data never leaves your machine  ║
+║    FAST            │  9 models trained + ranked in minutes ║
+║    COMPREHENSIVE   │  6 fairness metrics per attribute      ║
+║    AUDITABLE       │  Row-level decision traces, PDF export ║
+║    FREE            │  MIT licensed, no SaaS subscriptions  ║
+║    OPTIONAL CLOUD  │  Firebase is opt-in, not required      ║
 ╚═══════════════════════════════════════════════════════════════╝
 ```
 
@@ -143,7 +143,7 @@ Upload a CSV, mark your protected attributes, and receive a full fairness report
 
 <br/>
 
-## 🏗️ Architecture
+##  Architecture
 
 Themis follows a clean **client-server architecture** with strict separation between the audit engine and the UI layer.
 
@@ -253,16 +253,16 @@ Before any model touches the data, Themis runs a **data-level fairness check**. 
 
 ```
 PRE-AUDIT CHECKS
-├── ✅ Binary outcome validation
+├──  Binary outcome validation
 │     Confirms target column is binary (0/1) and flags any issues
 │
-├── 📊 Representation Balance (Four-Fifths Rule)
+├──  Representation Balance (Four-Fifths Rule)
 │     For each protected attribute, for each group:
 │     ratio = group_positive_rate / max_positive_rate_across_groups
 │     • ratio < 0.8  → ⚠️  WARNING (amber)
 │     • ratio < 0.5  → 🔴 DANGER  (red)
 │
-├── 🔗 Proxy Variable Detection
+├──  Proxy Variable Detection
 │     Numerical features   → Pearson correlation with protected attributes
 │     Categorical features → Cramér's V statistic
 │     Mixed pairs          → Correlation ratio (eta²)
@@ -363,8 +363,8 @@ Example with race + sex:
   ├──────────────┼────────┼──────────────────┼─────────────────┤
   │  White Male  │  2,841 │     38.2%        │  1.000 (ref)    │
   │  White Female│    982 │     34.1%        │  0.893          │
-  │  Black Male  │  2,101 │     27.6%        │  0.723 ⚠️       │
-  │  Black Female│    476 │     19.3%        │  0.505 🔴       │
+  │  Black Male  │  2,101 │     27.6%        │  0.723          │
+  │  Black Female│    476 │     19.3%        │  0.505          │
   └──────────────┴────────┴──────────────────┴─────────────────┘
 
   → Race alone shows 0.72 ratio (flagged)
@@ -527,9 +527,9 @@ $$\text{DIR} = \frac{\min_{g \in G} P(\hat{Y}=1 \mid A=g)}{\max_{g \in G} P(\hat
   DIR = 0.276 / 0.382 = 0.723
 
   The four-fifths (80%) rule:
-  ├── DIR ≥ 0.80  →  ✅ Passes adverse impact screen
-  ├── DIR < 0.80  →  ⚠️  May indicate adverse impact — review required
-  └── DIR < 0.50  →  🔴 Severe adverse impact
+  ├── DIR ≥ 0.80  →   Passes adverse impact screen
+  ├── DIR < 0.80  →   May indicate adverse impact — review required
+  └── DIR < 0.50  →   Severe adverse impact
 
   DIR of 0.723 falls BELOW the 0.80 threshold → FLAG
 ```
@@ -544,10 +544,10 @@ $$\text{DIR} = \frac{\min_{g \in G} P(\hat{Y}=1 \mid A=g)}{\max_{g \in G} P(\hat
 ├──────────────┬───────────┬──────────────────────────────┤
 │  Level       │  Color    │  Criteria                    │
 ├──────────────┼───────────┼──────────────────────────────┤
-│  LOW         │  🟢 Green │  All metrics within policy   │
-│  MEDIUM      │  🟡 Amber │  1-2 metrics exceed soft     │
-│  HIGH        │  🟠 Orange│  Any metric exceeds hard     │
-│  CRITICAL    │  🔴 Red   │  Multiple hard thresholds or │
+│  LOW         │   Green   │  All metrics within policy   │
+│  MEDIUM      │   Amber   │  1-2 metrics exceed soft     │
+│  HIGH        │   Orange  │  Any metric exceeds hard     │
+│  CRITICAL    │   Red     │  Multiple hard thresholds or │
 │              │           │  DIR < 0.50                  │
 └──────────────┴───────────┴──────────────────────────────┘
 ```
@@ -558,7 +558,7 @@ $$\text{DIR} = \frac{\min_{g \in G} P(\hat{Y}=1 \mid A=g)}{\max_{g \in G} P(\hat
 
 <br/>
 
-## 🗂️ Demo Datasets
+## Demo Datasets
 
 Three curated benchmark datasets ship with Themis — no download required.
 
@@ -568,7 +568,7 @@ Three curated benchmark datasets ship with Themis — no download required.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  📁 compas.csv                                              │
+│     compas.csv                                              │
 ├─────────────────────────────────────────────────────────────┤
 │  Source       ProPublica compas-analysis                    │
 │  Rows         7,214                                         │
@@ -589,7 +589,7 @@ Three curated benchmark datasets ship with Themis — no download required.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  📁 adult.csv                                               │
+│     adult.csv                                               │
 ├─────────────────────────────────────────────────────────────┤
 │  Source       UCI Machine Learning Repository               │
 │  Rows         48,842                                        │
@@ -609,7 +609,7 @@ Three curated benchmark datasets ship with Themis — no download required.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  📁 german_credit.csv                                       │
+│     german_credit.csv                                       │
 ├─────────────────────────────────────────────────────────────┤
 │  Source       UCI Statlog German Credit                     │
 │  Rows         1,000                                         │
@@ -629,7 +629,7 @@ Three curated benchmark datasets ship with Themis — no download required.
 
 <br/>
 
-## 🏛️ Governance Policies
+## Governance Policies
 
 Themis ships with **five configurable policy presets**, each with different fairness thresholds, accuracy/fairness weighting, and protected attribute grouping rules.
 
@@ -757,7 +757,7 @@ FastAPI       → Auto-generates OpenAPI docs. Async support.
 
 <br/>
 
-## 📁 File Structure
+##   File Structure
 
 ```
 ai-bias-auditor/
@@ -848,7 +848,7 @@ ai-bias-auditor/
 
 <br/>
 
-## 🔌 API Reference
+##   API Reference
 
 All endpoints served by the FastAPI backend at `http://localhost:8000`.
 
@@ -962,31 +962,31 @@ GET  /api/history/{run_id}
 
 <br/>
 
-## 🚀 Setup & Installation
+##   Setup & Installation
 
 <br/>
 
 ### Prerequisites
 
 ```
-✅  Python 3.11 or 3.12
+   Python 3.11 or 3.12
       datetime.UTC was introduced in Python 3.11 — earlier versions will fail
       at import time with AttributeError
 
-✅  Flutter SDK (stable channel)
+   Flutter SDK (stable channel)
       flutter --version  should show ≥ 3.19
 
-✅  uv package manager (recommended)
+   uv package manager (recommended)
       pip install uv
       OR use pip directly if preferred
 
-✅  Git
-✅  A modern browser (Chrome recommended for Flutter web)
+   Git
+   A modern browser (Chrome recommended for Flutter web)
 
 OPTIONAL:
-  ✅  Firebase CLI (for cloud features)
+    Firebase CLI (for cloud features)
        npm install -g firebase-tools
-  ✅  Google AI Studio API key (for Gemini narrative)
+    Google AI Studio API key (for Gemini narrative)
        https://aistudio.google.com/app/apikey
 ```
 
