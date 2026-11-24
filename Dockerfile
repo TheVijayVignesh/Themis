@@ -15,8 +15,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# uv installs the pinned wheels in parallel and retries flaky downloads.
+COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /usr/local/bin/uv
 COPY requirements.txt .
-RUN pip install --timeout 120 --retries 10 -r requirements.txt
+RUN UV_HTTP_TIMEOUT=300 UV_HTTP_RETRIES=5 uv pip install --system --no-cache -r requirements.txt
 
 COPY app ./app
 COPY data ./data
