@@ -233,7 +233,8 @@ def demo_dataset(demo_id: str) -> dict[str, Any]:
         "defaults": {
             "protected_attributes": config["protected_attributes"],
             "outcome_column": config["outcome_column"],
-            "model_type": config["model_type"],
+            # Small hosts can default demos to one model; "compare_all" stays selectable.
+            "model_type": os.getenv("DEMO_MODEL_TYPE") or config["model_type"],
         },
         "source": config["source"],
         "name": config["name"],

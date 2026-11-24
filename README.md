@@ -149,6 +149,7 @@ Get a free API key at [aistudio.google.com](https://aistudio.google.com). When n
 | `BASE_PATH` | empty | Serve the whole app under a sub-path, e.g. `/themis` (pages, static files, API and the PDF link all follow it). |
 | `MAX_UPLOAD_MB` | `10` | Largest CSV or model upload. Uploads stay in memory and are never written to disk. |
 | `MAX_MEMORY_ITEMS` | `8` | How many datasets, models and reports are kept in memory before the oldest is dropped. |
+| `DEMO_MODEL_TYPE` | per demo (`compare_all`) | Default model preselected for demo datasets, e.g. `logistic_regression` on small CPU-limited hosts. |
 | `PORT` | `8080` | Port used by the Docker image. |
 
 ### Docker

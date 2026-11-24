@@ -89,3 +89,10 @@ def test_upload_size_limit(client_for) -> None:
     response = client.post("/api/upload", files={"file": ("big.csv", big, "text/csv")})
     assert response.status_code == 413
     assert "too large" in response.json()["detail"]
+
+
+def test_demo_model_type_override(client_for, monkeypatch: pytest.MonkeyPatch) -> None:
+    client = client_for("")
+    assert client.post("/api/demo/compas").json()["defaults"]["model_type"] == "compare_all"
+    monkeypatch.setenv("DEMO_MODEL_TYPE", "logistic_regression")
+    assert client.post("/api/demo/compas").json()["defaults"]["model_type"] == "logistic_regression"
