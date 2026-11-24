@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="AI Bias Auditor — Upload your dataset, configure protected attributes, and run a full fairness audit." />
   <title>Audit Workspace — AI Bias Auditor</title>
+  <link rel="icon" href="data:," />
+  <script>window.THEMIS_BASE = {{ base_path|tojson }};</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/styles.css" />
-  <link rel="stylesheet" href="/static/audit.css" />
+  <link rel="stylesheet" href="{{ base_path }}/static/styles.css" />
+  <link rel="stylesheet" href="{{ base_path }}/static/audit.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
@@ -18,7 +20,7 @@
   <nav class="audit-nav" aria-label="Audit workspace navigation">
     <div class="container">
       <div class="audit-nav-left">
-        <a href="/" class="audit-home-link" aria-label="Back to home">
+        <a href="{{ base_path }}/" class="audit-home-link" aria-label="Back to home">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -330,7 +332,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;
                       flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
             <div class="a-section-h2" style="margin-bottom:0;">Analysis Report</div>
-            <a id="downloadPdf" class="hidden" href="#" aria-label="Download audit report as PDF">
+            <a id="downloadPdf" class="hidden" href="#" download="ai-bias-audit-report.pdf" aria-label="Download audit report as PDF">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="2" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -349,8 +351,8 @@
   </section>
 
   <!-- Scripts: app.js first (binds all events), then audit.js (patches + charts) -->
-  <script src="/static/app.js"></script>
-  <script src="/static/audit.js"></script>
+  <script src="{{ base_path }}/static/app.js"></script>
+  <script src="{{ base_path }}/static/audit.js"></script>
 
   <!-- Auto-load demo from URL query param: /audit?demo=compas -->
   <script>

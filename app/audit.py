@@ -1590,7 +1590,7 @@ def build_model_pipeline(X: pd.DataFrame, model_type: str, model_params: dict[st
             max_depth=8,
             min_samples_leaf=5,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=1,
         )
     elif model_type == "extra_trees":
         estimator = ExtraTreesClassifier(
@@ -1598,7 +1598,7 @@ def build_model_pipeline(X: pd.DataFrame, model_type: str, model_params: dict[st
             max_depth=8,
             min_samples_leaf=5,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=1,
         )
     elif model_type == "gradient_boosting":
         estimator = GradientBoostingClassifier(random_state=42)

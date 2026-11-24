@@ -105,10 +105,10 @@ cd Themis
 uv venv --python 3.12
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
-uv pip install -r requirements.txt
+# 3. Install dependencies (pinned; add requirements-dev.txt for the tests)
+uv pip install -r requirements-dev.txt
 
-# 4. Download demo datasets
+# 4. Demo datasets ship in data/demos/. To refresh them:
 python scripts/download_demos.py
 
 # 5. Start the development server
@@ -129,7 +129,11 @@ To enable plain-English AI-written audit summaries, create a `.env` file in the 
 cp .env.example .env
 ```
 
-Then add your key:
+Install the optional Gemini SDK, then add your key:
+
+```bash
+uv pip install google-generativeai
+```
 
 ```env
 GEMINI_API_KEY=your_google_ai_studio_key_here
@@ -137,6 +141,29 @@ GEMINI_MODEL=gemini-2.5-flash   # optional, this is the default
 ```
 
 Get a free API key at [aistudio.google.com](https://aistudio.google.com). When no key is configured, Themis falls back to a deterministic local report automatically.
+
+### Configuration
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `BASE_PATH` | empty | Serve the whole app under a sub-path, e.g. `/themis` (pages, static files, API and the PDF link all follow it). |
+| `MAX_UPLOAD_MB` | `10` | Largest CSV or model upload. Uploads stay in memory and are never written to disk. |
+| `MAX_MEMORY_ITEMS` | `8` | How many datasets, models and reports are kept in memory before the oldest is dropped. |
+| `PORT` | `8080` | Port used by the Docker image. |
+
+### Docker
+
+```bash
+docker build -t themis .
+docker run --rm -p 8080:8080 -e BASE_PATH=/themis themis
+# http://127.0.0.1:8080/themis/   (health check: /themis/healthz)
+```
+
+### Tests
+
+```bash
+.venv/bin/python -m pytest
+```
 
 ---
 

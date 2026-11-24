@@ -682,7 +682,7 @@ function renderSimulation(simulation) {
 function renderReport(result) {
   els.reportSource.textContent = result.report.source;
   els.reportText.textContent = result.report.text;
-  els.downloadPdf.href = `/api/report/${result.report_id}/pdf`;
+  els.downloadPdf.href = withBase(`/api/report/${result.report_id}/pdf`);
   els.downloadPdf.classList.remove("hidden");
 }
 
@@ -800,8 +800,13 @@ function percent(value) {
   return `${Math.round(Number(value) * 1000) / 10}%`;
 }
 
+// Prefix app-relative paths ("/api/...") with the deployment base path ("/themis").
+function withBase(path) {
+  return `${window.THEMIS_BASE || ""}${path}`;
+}
+
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const response = await fetch(withBase(url), options);
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json() : await response.text();
   if (!response.ok) {

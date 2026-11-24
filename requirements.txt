@@ -1,15 +1,104 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-python-multipart>=0.0.9
-pandas>=2.2.0
-numpy>=1.26.0
-scipy>=1.13.0
-scikit-learn>=1.5.0
-joblib>=1.4.0
-fairlearn>=0.10.0
-reportlab>=4.2.0
-jinja2>=3.1.0
-google-generativeai>=0.8.0
-python-dotenv>=1.0.0
-pytest>=8.2.0
-httpx>=0.27.0
+annotated-doc==0.0.7
+    # via fastapi
+annotated-types==0.8.0
+    # via pydantic
+anyio==4.16.0
+    # via
+    #   fastapi
+    #   starlette
+    #   watchfiles
+charset-normalizer==3.5.3
+    # via reportlab
+click==8.5.1
+    # via uvicorn
+cloudpickle==3.1.3
+    # via joblib
+fairlearn==0.15.0
+    # via -r requirements.in
+fastapi==0.165.0
+    # via -r requirements.in
+h11==0.16.0
+    # via uvicorn
+httptools==0.9.0
+    # via uvicorn
+idna==3.20
+    # via anyio
+jinja2==3.1.6
+    # via -r requirements.in
+joblib==1.6.0
+    # via
+    #   -r requirements.in
+    #   scikit-learn
+markupsafe==3.0.4
+    # via jinja2
+narwhals==2.29.0
+    # via
+    #   fairlearn
+    #   scikit-learn
+numpy==2.5.5
+    # via
+    #   -r requirements.in
+    #   fairlearn
+    #   pandas
+    #   scikit-learn
+    #   scipy
+opentelemetry-api==1.45.2
+    # via fastapi
+pandas==3.1.1
+    # via
+    #   -r requirements.in
+    #   fairlearn
+pillow==13.0.0
+    # via reportlab
+pydantic==2.14.4
+    # via fastapi
+pydantic-core==2.50.5
+    # via pydantic
+python-dateutil==4.0.0
+    # via pandas
+python-dotenv==1.2.4
+    # via
+    #   -r requirements.in
+    #   uvicorn
+python-multipart==0.0.34
+    # via -r requirements.in
+pyyaml==6.0.4
+    # via uvicorn
+reportlab==5.1.1
+    # via -r requirements.in
+scikit-learn==1.9.1
+    # via
+    #   -r requirements.in
+    #   fairlearn
+scipy==1.18.1
+    # via
+    #   -r requirements.in
+    #   fairlearn
+    #   scikit-learn
+starlette==1.10.0
+    # via fastapi
+threadpoolctl==3.8.0
+    # via scikit-learn
+typing-extensions==4.16.0
+    # via
+    #   anyio
+    #   fastapi
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.5
+    # via
+    #   fastapi
+    #   pydantic
+tzdata==2026.6
+    # via python-dateutil
+uvicorn==0.54.0
+    # via -r requirements.in
+uvloop==0.23.0
+    # via uvicorn
+watchfiles==1.3.0
+    # via uvicorn
+websockets==17.4
+    # via uvicorn

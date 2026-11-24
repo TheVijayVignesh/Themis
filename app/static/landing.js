@@ -185,7 +185,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 /* ── HANDLE DEMO QUERY PARAM ON AUDIT PAGE ───────────────────── */
 // If on /audit page with ?demo=xxx, auto-load that demo
-if (window.location.pathname === '/audit') {
+if (window.location.pathname.replace(/\/$/, '').endsWith('/audit')) {
   const params = new URLSearchParams(window.location.search);
   const demoId = params.get('demo');
   if (demoId) {

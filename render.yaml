@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: themis
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /themis/healthz
+    envVars:
+      - key: BASE_PATH
+        value: /themis
+      - key: MAX_UPLOAD_MB
+        value: "10"

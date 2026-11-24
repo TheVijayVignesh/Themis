@@ -5,3 +5,10 @@ __pycache__
 .DS_Store
 tests
 scripts
+.git
+.github
+.env
+.env.*
+flutter_firebase_auditor
+output
+*.log

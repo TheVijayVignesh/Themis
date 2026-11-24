@@ -3,14 +3,16 @@ from __future__ import annotations
 import uuid
 import pickle
 import os
+import threading
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 import joblib
 import pandas as pd
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
@@ -22,7 +24,67 @@ from app.report import build_pdf_report
 
 load_dotenv()
 
-app = FastAPI(title="AI Bias Auditor", version="0.1.0")
+APP_DIR = Path(__file__).resolve().parent
+
+
+def normalize_base_path(value: str | None) -> str:
+    """Return "" or a path like "/themis" (leading slash, no trailing slash)."""
+    value = (value or "").strip().strip("/")
+    return f"/{value}" if value else ""
+
+
+BASE_PATH = normalize_base_path(os.getenv("BASE_PATH"))
+MAX_UPLOAD_BYTES = int(float(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024)
+# Extra room for multipart boundaries and form fields around the file itself.
+MAX_REQUEST_BYTES = MAX_UPLOAD_BYTES + 256 * 1024
+
+# Keep uploaded files in memory: never spool them to a temp file on disk.
+# The request-size guard below caps how large they can get.
+from starlette.formparsers import MultiPartParser  # noqa: E402
+
+MultiPartParser.spool_max_size = MAX_REQUEST_BYTES
+
+
+class RequestSizeLimitMiddleware:
+    """Reject request bodies larger than MAX_REQUEST_BYTES with 413."""
+
+    def __init__(self, app: Any, max_bytes: int) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = dict(scope.get("headers") or [])
+        declared = headers.get(b"content-length")
+        if declared is not None and declared.isdigit() and int(declared) > self.max_bytes:
+            await self._too_large(scope, receive, send)
+            return
+
+        received = 0
+
+        async def limited_receive() -> dict[str, Any]:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.max_bytes:
+                    raise HTTPException(status_code=413, detail=self._detail())
+            return message
+
+        await self.app(scope, limited_receive, send)
+
+    def _detail(self) -> str:
+        return f"Upload is too large. The limit is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
+
+    async def _too_large(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        response = JSONResponse({"detail": self._detail()}, status_code=413)
+        await response(scope, receive, send)
+
+
+app = FastAPI(title="Themis", version="0.1.0", docs_url=None, redoc_url=None, openapi_url=None)
+router = APIRouter()
 default_cors_origins = ",".join(
     [
         "http://localhost:5000",
@@ -46,14 +108,20 @@ if cors_origins:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.add_middleware(RequestSizeLimitMiddleware, max_bytes=MAX_REQUEST_BYTES)
+app.mount(f"{BASE_PATH}/static", StaticFiles(directory=APP_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=APP_DIR / "templates")
+# Every template link, asset and script prefix goes through base_path.
+templates.env.globals["base_path"] = BASE_PATH
 
 SESSIONS: dict[str, dict[str, Any]] = {}
 MODELS: dict[str, dict[str, Any]] = {}
 REPORTS: dict[str, dict[str, Any]] = {}
-MAX_MEMORY_ITEMS = 25
-MAX_MODEL_BYTES = 50 * 1024 * 1024
+# Datasets and reports live only in memory; keep few of them on small instances.
+MAX_MEMORY_ITEMS = int(os.getenv("MAX_MEMORY_ITEMS", "8"))
+MAX_MODEL_BYTES = MAX_UPLOAD_BYTES
+# One audit at a time keeps peak memory predictable on a 512 MB instance.
+AUDIT_LOCK = threading.Lock()
 
 
 class AuditRequest(BaseModel):
@@ -65,37 +133,40 @@ class AuditRequest(BaseModel):
     model_id: str | None = None
 
 
-@app.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "index.html", {})
 
 
-@app.get("/audit", response_class=HTMLResponse)
+@router.get("/audit", response_class=HTMLResponse)
 async def audit_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "audit.html", {})
 
 
-@app.get("/health")
+@router.get("/health")
+@router.get("/healthz")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/favicon.ico", include_in_schema=False)
+@router.get("/favicon.ico", include_in_schema=False)
 async def favicon() -> Response:
     return Response(status_code=204)
 
 
-@app.get("/api/demos")
+@router.get("/api/demos")
 async def demos() -> dict[str, Any]:
     return {"demos": list_demos()}
 
 
-@app.post("/api/upload")
-async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
+@router.post("/api/upload")
+def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Upload a CSV file.")
 
-    content = await file.read()
+    content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"CSV is too large. The limit is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
     try:
         df = pd.read_csv(BytesIO(content))
     except Exception as exc:
@@ -105,8 +176,8 @@ async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
     return {"session_id": session_id, "profile": profile_dataframe(df), "source": file.filename}
 
 
-@app.post("/api/model")
-async def upload_model(session_id: str = Form(...), file: UploadFile = File(...)) -> dict[str, Any]:
+@router.post("/api/model")
+def upload_model(session_id: str = Form(...), file: UploadFile = File(...)) -> dict[str, Any]:
     if session_id not in SESSIONS:
         raise HTTPException(status_code=404, detail="Dataset session expired. Upload the CSV again.")
     if not file.filename:
@@ -116,9 +187,9 @@ async def upload_model(session_id: str = Form(...), file: UploadFile = File(...)
     if not lower_name.endswith((".joblib", ".pkl", ".pickle")):
         raise HTTPException(status_code=400, detail="Upload a .joblib, .pkl, or .pickle model file.")
 
-    content = await file.read()
+    content = file.file.read(MAX_MODEL_BYTES + 1)
     if len(content) > MAX_MODEL_BYTES:
-        raise HTTPException(status_code=400, detail="Model file is too large. The MVP limit is 50 MB.")
+        raise HTTPException(status_code=413, detail=f"Model file is too large. The limit is {MAX_MODEL_BYTES // (1024 * 1024)} MB.")
 
     try:
         model, loader = load_uploaded_model(content)
@@ -146,8 +217,8 @@ async def upload_model(session_id: str = Form(...), file: UploadFile = File(...)
     }
 
 
-@app.post("/api/demo/{demo_id}")
-async def demo_dataset(demo_id: str) -> dict[str, Any]:
+@router.post("/api/demo/{demo_id}")
+def demo_dataset(demo_id: str) -> dict[str, Any]:
     try:
         df, config = load_demo_dataset(demo_id)
     except KeyError as exc:
@@ -169,18 +240,19 @@ async def demo_dataset(demo_id: str) -> dict[str, Any]:
     }
 
 
-@app.post("/api/pre-audit")
-async def pre_audit_dataset(request: AuditRequest) -> dict[str, Any]:
+@router.post("/api/pre-audit")
+def pre_audit_dataset(request: AuditRequest) -> dict[str, Any]:
     session = SESSIONS.get(request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Dataset session expired. Upload the CSV again.")
 
     try:
-        result = run_pre_audit_only(
-            session["dataframe"],
-            protected_attributes=request.protected_attributes,
-            outcome_column=request.outcome_column,
-        )
+        with AUDIT_LOCK:
+            result = run_pre_audit_only(
+                session["dataframe"],
+                protected_attributes=request.protected_attributes,
+                outcome_column=request.outcome_column,
+            )
     except AuditError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -190,8 +262,8 @@ async def pre_audit_dataset(request: AuditRequest) -> dict[str, Any]:
     return result
 
 
-@app.post("/api/audit")
-async def audit_dataset(request: AuditRequest) -> dict[str, Any]:
+@router.post("/api/audit")
+def audit_dataset(request: AuditRequest) -> dict[str, Any]:
     session = SESSIONS.get(request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Dataset session expired. Upload the CSV again.")
@@ -209,15 +281,16 @@ async def audit_dataset(request: AuditRequest) -> dict[str, Any]:
 
     df = session["dataframe"]
     try:
-        result = run_audit(
-            df,
-            protected_attributes=request.protected_attributes,
-            outcome_column=request.outcome_column,
-            model_type=request.model_type,
-            audit_mode=request.audit_mode,
-            uploaded_model=model,
-            uploaded_model_name=model_name,
-        )
+        with AUDIT_LOCK:
+            result = run_audit(
+                df,
+                protected_attributes=request.protected_attributes,
+                outcome_column=request.outcome_column,
+                model_type=request.model_type,
+                audit_mode=request.audit_mode,
+                uploaded_model=model,
+                uploaded_model_name=model_name,
+            )
     except AuditError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -229,8 +302,8 @@ async def audit_dataset(request: AuditRequest) -> dict[str, Any]:
     return {"report_id": report_id, **result}
 
 
-@app.get("/api/report/{report_id}/pdf")
-async def report_pdf(report_id: str) -> StreamingResponse:
+@router.get("/api/report/{report_id}/pdf")
+def report_pdf(report_id: str) -> StreamingResponse:
     result = REPORTS.get(report_id)
     if not result:
         raise HTTPException(status_code=404, detail="Report expired. Run the audit again.")
@@ -240,6 +313,19 @@ async def report_pdf(report_id: str) -> StreamingResponse:
         media_type="application/pdf",
         headers={"Content-Disposition": 'attachment; filename="ai-bias-audit-report.pdf"'},
     )
+
+
+app.include_router(router, prefix=BASE_PATH)
+
+if BASE_PATH:
+    # Serve "/themis" itself (not only "/themis/") without a redirect, so the
+    # portfolio rewrite never bounces visitors to this service's own host.
+    app.add_api_route(BASE_PATH, index, methods=["GET"], response_class=HTMLResponse, include_in_schema=False)
+
+    @app.get("/", include_in_schema=False)
+    async def root_redirect() -> RedirectResponse:
+        # Relative Location: stays on whichever host the visitor used.
+        return RedirectResponse(url=f"{BASE_PATH}/", status_code=307)
 
 
 def create_session(df: pd.DataFrame, metadata: dict[str, Any]) -> str:
